@@ -100,15 +100,15 @@ def edit_bus(ID_BUS):
     # Create cursor
     cur = mysql.connection.cursor()
 
-    # Get article by id
+    # Get bus by id
     result = cur.execute("SELECT * FROM bus WHERE ID_BUS = %s", [ID_BUS])
 
-    article = cur.fetchone()
+    bus = cur.fetchone()
     cur.close()
     # Get form
     form = BusForm(request.form)
 
-    # Populate article form fields
+    # Populate bus form fields
     numero = form.numero.data
     immatriculation = form.immatriculation.data
     nombre_place = form.nombre_place.data
@@ -133,7 +133,7 @@ def edit_bus(ID_BUS):
 
         flash('Bus Updated', 'success')
 
-        return redirect(url_for('bus'))
+        return redirect(url_for('lignes'))
 
     return render_template('edit_bus.html', form=form)
 
@@ -172,12 +172,20 @@ def bus():
     articles = cur.fetchall()
 
     if result > 0:
-        return render_template('bus.html', articles=articles)
+        return render_template('bus.html', bus=bus)
     else:
         msg = 'No Bus Found'
         return render_template('bus.html', msg=msg)
     # Close connection
     cur.close()
+
+
+
+
+
+
+
+
 
 
 # login
