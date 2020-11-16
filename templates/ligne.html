@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Ligne {{ligne.ID_LIGNE}}</h1>
+  <ul class="list-group">
+    {% for lion in arret %}
+      <li class="list-group-item"><a>{{lion.NOM}}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}
