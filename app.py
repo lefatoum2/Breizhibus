@@ -18,11 +18,31 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # initialisation MYSQL
 mysql = MySQL(app)
 
-print("connexion réussie")
+
+# Home
+@app.route('/home')
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+
+# Arrets par ligne
+@app.route('/arrets_ligne')
+def arrets():
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT nom FROM arrets")
+    arrets = cur.fetchall()
+    if result > 0:
+        return render_template('arrets_ligne.html', arrets)
+    else:
+        msg = 'No Lignes Found'
+        return render_template('arrets_ligne.html', arrets)
+    # Close connection
+    cur.close()
 
 
 # Lignes
-@app.route('/')
+@app.route('/lignes')
 def lignes():
     cur = mysql.connection.cursor()
 
@@ -39,29 +59,30 @@ def lignes():
     cur.close()
 
 
-print("route 1")
-
-
 # Ligne
 @app.route('/ligne/<string:ID_LIGNE>/')
 def ligne(ID_LIGNE):
     cur = mysql.connection.cursor()
     cur2 = mysql.connection.cursor()
-    # Get article
-    result = cur.execute("SELECT * FROM arrets  natural join arrets_lignes WHERE ID_LIGNE = %s", [ID_LIGNE])
-    result2 = cur2.execute("SELECT * FROM arrets  natural join arrets_lignes WHERE ID_LIGNE = %s", [ID_LIGNE])
+    cur3 = mysql.connection.cursor()
+
+    cur.execute("SELECT * FROM arrets  natural join arrets_lignes WHERE ID_LIGNE = %s", [ID_LIGNE])
+    cur2.execute("SELECT * FROM arrets  natural join arrets_lignes WHERE ID_LIGNE = %s", [ID_LIGNE])
+    cur3.execute("SELECT * FROM bus  WHERE ID_LIGNE = %s", [ID_LIGNE])
 
     arret = cur.fetchall()
     ligne = cur2.fetchone()
-    return render_template('ligne.html', ligne=ligne, arret=arret)
+    bus1 = cur3.fetchall()
+
+    return render_template('ligne.html', ligne=ligne, arret=arret, bus1=bus1)
 
 
 # Bus Form Class
 class BusForm(Form):
-    numero = StringField('numero', [validators.Length(min=1, max=200)])
-    immatriculation = StringField('immatriculation', [validators.Length(min=1, max=200)])
-    nombre_place = StringField('nombre_place', [validators.Length(min=1, max=200)])
-    id_ligne = StringField('id_ligne', [validators.Length(min=1, max=200)])
+    numero = StringField('numero', )
+    immatriculation = StringField('immatriculation', )
+    nombre_place = StringField('nombre_place', )
+    id_ligne = StringField('id_ligne', )
 
 
 # Add Bus
@@ -89,9 +110,12 @@ def add_bus():
 
         flash('Bus Created', 'success')
 
-        return redirect(url_for('lignes'))
+        return redirect(url_for('dashboard'))
 
     return render_template('add_bus.html', form=form)
+
+
+print("update")
 
 
 # Edit Bus
@@ -101,7 +125,7 @@ def edit_bus(ID_BUS):
     cur = mysql.connection.cursor()
 
     # Get bus by id
-    result = cur.execute("SELECT * FROM bus WHERE ID_BUS = %s", [ID_BUS])
+    cur.execute("SELECT * FROM bus WHERE ID_BUS = %s", [ID_BUS])
 
     bus = cur.fetchone()
     cur.close()
@@ -109,10 +133,10 @@ def edit_bus(ID_BUS):
     form = BusForm(request.form)
 
     # Populate bus form fields
-    numero = form.numero.data
-    immatriculation = form.immatriculation.data
-    nombre_place = form.nombre_place.data
-    id_ligne = form.id_ligne.data
+    form.numero.data = bus['NUMERO']
+    form.immatriculation.data = bus['IMMATRICULATION']
+    form.nombre_place.data = bus['NOMBRE_PLACE']
+    form.id_ligne.data = bus['ID_LIGNE']
 
     if request.method == 'POST' and form.validate():
         numero = request.form['numero']
@@ -122,9 +146,11 @@ def edit_bus(ID_BUS):
 
         # Create Cursor
         cur = mysql.connection.cursor()
-        app.logger.info(ID_BUS)
+
+        # app.logger.info(numero)
         # Execute
-        cur.execute("UPDATE bus SET NUMERO=%s, IMMATRICULATION=%s, NOMBRE_PLACE=%s, ID_LIGNE=%s WHERE ID_BUS=%s", (numero, immatriculation, nombre_place, id_ligne, ID_BUS))
+        cur.execute("UPDATE bus SET NUMERO=%s, IMMATRICULATION=%s, NOMBRE_PLACE=%s, ID_LIGNE=%s WHERE ID_BUS=%s",
+                    (numero, immatriculation, nombre_place, id_ligne, ID_BUS))
         # Commit to DB
         mysql.connection.commit()
 
@@ -133,19 +159,19 @@ def edit_bus(ID_BUS):
 
         flash('Bus Updated', 'success')
 
-        return redirect(url_for('lignes'))
+        return redirect(url_for('dashboard'))
 
     return render_template('edit_bus.html', form=form)
 
 
 # Delete Bus
-@app.route('/delete_bus/<string:ID_BUS>', methods=['POST'])
-def delete_bus(ID_BUS):
+@app.route('/delete_bus/<string:id>', methods=['POST'])
+def delete_bus(id):
     # Create cursor
     cur = mysql.connection.cursor()
 
     # Execute
-    cur.execute("DELETE FROM bus WHERE id = %s", [ID_BUS])
+    cur.execute("DELETE FROM bus WHERE ID_BUS = %s", [id])
 
     # Commit to DB
     mysql.connection.commit()
@@ -155,98 +181,61 @@ def delete_bus(ID_BUS):
 
     flash('Bus Deleted', 'success')
 
-    return redirect(url_for('bus'))
+    return redirect(url_for('dashboard'))
 
 
-# Bus
-@app.route('/bus')
-def bus():
+# Dashboard
+@app.route('/dashboard')
+def dashboard():
     # Create cursor
     cur = mysql.connection.cursor()
 
     # Get articles
-    # result = cur.execute("SELECT * FROM bus")
+    # result = cur.execute("SELECT * FROM articles")
     # Show articles only from the user logged in
-    result = cur.execute("SELECT * FROM bus WHERE author = %s")
+    result = cur.execute("SELECT * FROM bus ")
 
-    articles = cur.fetchall()
+    busall = cur.fetchall()
 
     if result > 0:
-        return render_template('bus.html', bus=bus)
+        return render_template('dashboard.html', bus=busall)
     else:
-        msg = 'No Bus Found'
-        return render_template('bus.html', msg=msg)
+        msg = 'No Bus'
+        return render_template('dashboard.html', msg=msg)
     # Close connection
     cur.close()
 
 
+@app.route('/arrets')
+def all_stops():
+    cur = mysql.connection.cursor()
+    result = cur.execute("select * FROM arrets")
+    stopall = cur.fetchall()
+
+    if result > 0:
+        return render_template('arrets.html', stopall=stopall)
+    else:
+        msg = 'No Stops'
+        return render_template('dashboard.html', msg)
 
 
+@app.route('/adress/<string:ID_ARRET>')
+def adresse(ID_ARRET):
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT ADRESSE FROM ARRETS where ID_ARRET = %s", [ID_ARRET] )
+    adresse = cur.fetchall()
+
+    if result > 0:
+        return render_template('adress.html', adresse=adresse)
+    else:
+        msg = 'No adress'
+        return render_template('dashboard.html', msg)
 
 
-
-
-
-
-# login
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        # Get Form Fields
-        username = request.form['username']
-        password_candidate = request.form['password']
-
-        # Create cursor
-        cur = mysql.connection.cursor()
-
-        # Get user by username
-        result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
-
-        if result > 0:
-            # Get stored hash
-            data = cur.fetchone()
-            password = data['password']
-
-            # Compare Passwords
-            if sha256_crypt.verify(password_candidate, password):
-                # Passed
-                session['logged_in'] = True
-                session['username'] = username
-
-                flash('You are now logged in', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                error = 'Invalid login'
-                return render_template('login.html', error=error)
-            # Close connection
-            cur.close()
-        else:
-            error = 'Username not found'
-            return render_template('login.html', error=error)
-
-    return render_template('login.html')
-
-
-# Check if user logged in
-def is_logged_in(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        if 'logged_in' in session:
-            return f(*args, **kwargs)
-        else:
-            flash('Unauthorized, Please login', 'danger')
-            return redirect(url_for('login'))
-
-    return wrap
-
-
-# Logout
-@app.route('/logout')
-@is_logged_in
-def logout():
-    session.clear()
-    flash('You are now logged out', 'success')
-    return redirect(url_for('login'))
+def redirect_url(default='index'):
+    return request.args.get('next') or \
+           request.referrer or \
+           url_for(default)
 
 
 if __name__ == '__main__':
