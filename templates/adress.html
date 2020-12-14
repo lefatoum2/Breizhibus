@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Adresse</h1>
+  <ul class="list-group">
+    {% for adr in adresse %}
+      <li class="list-group-item"><a href="">{{adr.ADRESSE}}</a></li>
+    {% endfor %}
+  </ul>
+
+{% endblock%}

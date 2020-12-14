@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Arrêts</h1>
+  <ul class="list-group">
+    {% for stop in stopall %}
+      <li class="list-group-item"><a href="adress/{{stop.ID_ARRET}}">{{stop.NOM}}</a></li>
+    {% endfor %}
+  </ul>
+
+{% endblock%}
