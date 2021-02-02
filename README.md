@@ -1,4 +1,4 @@
-# breizhibus
+# Breizhibus
 
 
 Préparer une base de données et écrire un code qui permet à Breizhibus de gérer ses lignes de bus.
