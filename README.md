@@ -1,5 +1,7 @@
 # Breizhibus
 
+![img1](https://www.lesuricate.org/wp-content/uploads/2017/02/the-magic-school-bus.jpg)
+
 
 Préparer une base de données et écrire un code qui permet à Breizhibus de gérer ses lignes de bus.
 
